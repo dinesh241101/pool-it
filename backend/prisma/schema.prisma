@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(uuid())
+  name             String    @default("")
+  phone            String    @unique
+  email            String    @default("")
+  passwordHash     String    @default("")
+  profilePic       String    @default("")
+  emergencyContact String    @default("")
+  isDriver         Boolean   @default(false)
+  isLicenseVerified Boolean  @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  vehicles Vehicle[]
+  rides    Ride[]
+  bookings Booking[]
+  sosAlerts SosAlert[]
+  ratingsGiven    Rating[] @relation("ratingsGiven")
+  ratingsReceived Rating[] @relation("ratingsReceived")
+}
+
+model Vehicle {
+  id           String   @id @default(uuid())
+  userId       String
+  make         String
+  model        String
+  year         String   @default("")
+  color        String   @default("")
+  licensePlate String   @unique
+  seats        Int      @default(4)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id])
+  rides Ride[]
+}
+
+model Ride {
+  id                String   @id @default(uuid())
+  driverId          String
+  vehicleId         String?
+  source            String
+  destination       String
+  intermediateStops Json     @default("[]")
+  dateTime          DateTime
+  availableSeats    Int
+  totalSeats        Int
+  farePerSeat       Float
+  status            String   @default("active") // active, started, completed, cancelled
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  driver   User      @relation(fields: [driverId], references: [id])
+  vehicle  Vehicle?  @relation(fields: [vehicleId], references: [id])
+  bookings Booking[]
+  locations RideLocation[]
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  rideId      String
+  riderId     String
+  seatsBooked Int
+  totalFare   Float
+  status      String   @default("confirmed") // confirmed, started, completed, cancelled
+  otp         String   @default("")
+  otpExpiry   DateTime
+  otpAttempts Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ride  Ride @relation(fields: [rideId], references: [id])
+  rider User @relation(fields: [riderId], references: [id])
+  payment Payment?
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  bookingId     String   @unique
+  amount        Float
+  method        String   @default("") // upi, card, wallet, netbanking
+  status        String   @default("pending") // pending, completed, failed, refunded
+  transactionId String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+}
+
+model Rating {
+  id          String   @id @default(uuid())
+  rideId      String
+  reviewerId  String
+  revieweeId  String
+  rating      Int      // 1-5
+  review      String   @default("")
+  createdAt   DateTime @default(now())
+
+  reviewer User @relation("ratingsGiven", fields: [reviewerId], references: [id])
+  reviewee User @relation("ratingsReceived", fields: [revieweeId], references: [id])
+}
+
+model RideLocation {
+  id        String   @id @default(uuid())
+  rideId    String
+  latitude  Float
+  longitude Float
+  speed     Float    @default(0)
+  heading   Float    @default(0)
+  timestamp DateTime @default(now())
+
+  ride Ride @relation(fields: [rideId], references: [id])
+}
+
+model SosAlert {
+  id        String   @id @default(uuid())
+  userId    String
+  rideId    String?
+  latitude  Float
+  longitude Float
+  status    String   @default("active") // active, resolved
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
