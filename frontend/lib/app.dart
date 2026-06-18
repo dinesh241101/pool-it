@@ -4,6 +4,7 @@ import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/splash_screen.dart';
 
 class RideMateApp extends StatelessWidget {
   const RideMateApp({super.key});
@@ -11,10 +12,13 @@ class RideMateApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'RideMate',
+      title: 'Pool-It',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const AuthGate(),
+      home: const SplashScreen(),
+      routes: {
+        '/auth': (context) => const AuthGate(),
+      },
     );
   }
 }

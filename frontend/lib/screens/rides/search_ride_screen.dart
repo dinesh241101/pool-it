@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ride_provider.dart';
+import '../../models/ride_model.dart';
 import '../../core/theme/app_theme.dart';
 import 'ride_detail_screen.dart';
 
@@ -65,58 +66,91 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextFormField(
-              controller: _sourceController,
-              decoration: const InputDecoration(
-                labelText: 'From',
-                prefixIcon: Icon(Icons.trip_origin),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _destController,
-              decoration: const InputDecoration(
-                labelText: 'To',
-                prefixIcon: Icon(Icons.location_on),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _pickDate,
-                    icon: const Icon(Icons.calendar_today),
-                    label: Text(
-                      _selectedDate != null
-                          ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
-                          : 'Select Date (Optional)',
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _sourceController,
+                    decoration: const InputDecoration(
+                      labelText: 'From',
+                      prefixIcon: Icon(Icons.trip_origin, color: AppTheme.primaryColor),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _search,
-                    icon: const Icon(Icons.search),
-                    label: const Text('Search'),
+                  const SizedBox(height: 8),
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: Icon(Icons.arrow_downward,
+                        size: 20, color: AppTheme.textSecondary),
                   ),
-                ),
-              ],
-            ),
-            if (_selectedDate != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: TextButton.icon(
-                  onPressed: () => setState(() => _selectedDate = null),
-                  icon: const Icon(Icons.clear, size: 16),
-                  label: const Text('Clear Date Filter'),
-                ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _destController,
+                    decoration: const InputDecoration(
+                      labelText: 'To',
+                      prefixIcon:
+                          Icon(Icons.location_on, color: AppTheme.errorColor),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _pickDate,
+                          icon: const Icon(Icons.calendar_today, size: 18),
+                          label: Text(
+                            _selectedDate != null
+                                ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
+                                : 'Date (Optional)',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            side: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _search,
+                          icon: const Icon(Icons.search, size: 20),
+                          label: const Text('Search'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_selectedDate != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: TextButton.icon(
+                        onPressed: () => setState(() => _selectedDate = null),
+                        icon: const Icon(Icons.clear, size: 16),
+                        label: const Text('Clear Date Filter'),
+                      ),
+                    ),
+                ],
               ),
-            const SizedBox(height: 24),
+            ),
+            const SizedBox(height: 20),
             if (rideProv.searchResults.isNotEmpty) ...[
               if (isGuest && rideProv.searchResults.length > 5)
                 Container(
@@ -125,29 +159,34 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.amber.shade200),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.amber.shade700, size: 18),
+                      Icon(Icons.info_outline,
+                          color: Colors.amber.shade700, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Showing 5 of ${rideProv.searchResults.length} rides. Sign in to view all.',
-                          style: TextStyle(color: Colors.amber.shade900, fontSize: 13),
+                          style: TextStyle(
+                              color: Colors.amber.shade900, fontSize: 13),
                         ),
                       ),
                     ],
                   ),
                 ),
-              Text(
-                '${displayResults.length} rides found',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 12),
+                child: Text(
+                  '${displayResults.length} ride${displayResults.length > 1 ? 's' : ''} found',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                      ),
+                ),
               ),
-              const SizedBox(height: 12),
               ...displayResults.map((ride) => _RideSearchCard(
                     ride: ride,
                     onTap: () => Navigator.push(
@@ -162,13 +201,13 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
                     _destController.text.isNotEmpty)) ...[
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(40),
                   child: Center(
                     child: Column(
                       children: [
                         Icon(Icons.search_off,
-                            size: 48, color: AppTheme.textSecondary),
-                        const SizedBox(height: 12),
+                            size: 56, color: AppTheme.textSecondary.withValues(alpha: 0.5)),
+                        const SizedBox(height: 16),
                         Text(
                           'No rides found',
                           style: Theme.of(context)
@@ -198,7 +237,7 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
 }
 
 class _RideSearchCard extends StatelessWidget {
-  final dynamic ride;
+  final RideModel ride;
   final VoidCallback onTap;
 
   const _RideSearchCard({required this.ride, required this.onTap});
@@ -206,9 +245,10 @@ class _RideSearchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -216,15 +256,25 @@ class _RideSearchCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: AppTheme.primaryColor,
-                    radius: 20,
-                    child: Text(
-                      ride.driverName.isNotEmpty
-                          ? ride.driverName[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF43A047), Color(0xFF2E7D32)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        ride.driverName.isNotEmpty
+                            ? ride.driverName[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -238,7 +288,8 @@ class _RideSearchCard extends StatelessWidget {
                         if (ride.vehicleInfo.isNotEmpty)
                           Text(ride.vehicleInfo,
                               style: TextStyle(
-                                  color: AppTheme.textSecondary, fontSize: 13)),
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 13)),
                       ],
                     ),
                   ),
@@ -247,79 +298,50 @@ class _RideSearchCard extends StatelessWidget {
                     children: [
                       Text(
                         '₹${ride.farePerSeat}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppTheme.primaryColor,
                           fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                          fontSize: 20,
                         ),
                       ),
                       Text(
-                        '${ride.availableSeats} seats',
+                        '/seat',
                         style: TextStyle(
-                            color: AppTheme.textSecondary, fontSize: 12),
+                            color: AppTheme.textSecondary, fontSize: 11),
                       ),
                     ],
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              _SearchRouteTimeline(ride: ride),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.trip_origin, size: 16, color: AppTheme.primaryColor),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(ride.source,
-                        style: const TextStyle(fontWeight: FontWeight.w500)),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: List.generate(
-                    (ride.intermediateStops as List).length,
-                    (i) => Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.orange,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(ride.intermediateStops[i] as String,
-                              style: TextStyle(
-                                  color: AppTheme.textSecondary, fontSize: 13)),
-                        ],
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${ride.availableSeats} seat${ride.availableSeats > 1 ? 's' : ''} left',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryColor,
                       ),
                     ),
                   ),
-                ),
-              ),
-              Row(
-                children: [
-                  const SizedBox(width: 6),
-                  const Icon(Icons.location_on, size: 16, color: AppTheme.errorColor),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(ride.destination,
-                        style: const TextStyle(fontWeight: FontWeight.w500)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.access_time, size: 16, color: AppTheme.textSecondary),
+                  const SizedBox(width: 12),
+                  Icon(Icons.access_time,
+                      size: 14, color: AppTheme.textSecondary),
                   const SizedBox(width: 4),
                   Text(
-                    '${ride.dateTime.day}/${ride.dateTime.month} ${ride.dateTime.hour}:${ride.dateTime.minute.toString().padLeft(2, '0')}',
-                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                    '${ride.dateTime.day}/${ride.dateTime.month} ${ride.dateTime.hour.toString().padLeft(2, '0')}:${ride.dateTime.minute.toString().padLeft(2, '0')}',
+                    style: TextStyle(
+                        color: AppTheme.textSecondary, fontSize: 12),
                   ),
                 ],
               ),
@@ -327,6 +349,80 @@ class _RideSearchCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SearchRouteTimeline extends StatelessWidget {
+  final RideModel ride;
+
+  const _SearchRouteTimeline({required this.ride});
+
+  @override
+  Widget build(BuildContext context) {
+    final stops = [ride.source, ...ride.intermediateStops, ride.destination];
+    final stopColors = [
+      AppTheme.primaryColor,
+      ...List.filled(ride.intermediateStops.length, AppTheme.accentColor),
+      AppTheme.errorColor,
+    ];
+
+    return Column(
+      children: List.generate(stops.length, (index) {
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 24,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: stopColors[index],
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: stopColors[index].withValues(alpha: 0.3),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (index < stops.length - 1)
+                      Expanded(
+                        child: Container(
+                          width: 1.5,
+                          color: Colors.grey.shade300,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Padding(
+                padding: EdgeInsets.only(
+                  top: index == 0 ? 0 : 4,
+                  bottom: index < stops.length - 1 ? 4 : 0,
+                ),
+                child: Text(
+                  stops[index],
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: index == 0 || index == stops.length - 1
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                    color: stopColors[index],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }

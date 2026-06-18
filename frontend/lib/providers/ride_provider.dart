@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/ride_model.dart';
@@ -22,6 +21,32 @@ class RideProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   List<RideModel> get activeRides =>
       _rides.where((r) => r.status == 'active').toList();
+
+  List<RideModel> get upcomingRides =>
+      _rides.where((r) => r.status == 'active' || r.status == 'started').toList();
+
+  List<RideModel> get completedRides =>
+      _rides.where((r) => r.status == 'completed').toList();
+
+  List<BookingModel> getUserBookings(String userId) =>
+      _bookings.where((b) => b.riderId == userId).toList();
+
+  List<BookingModel> getCompletedBookings(String userId) =>
+      _bookings.where((b) => b.riderId == userId && b.status == 'completed').toList();
+
+  List<BookingModel> getUpcomingBookings(String userId) =>
+      _bookings.where((b) => b.riderId == userId && b.status != 'completed').toList();
+
+  RideModel? getRideById(String rideId) {
+    try {
+      return _rides.firstWhere((r) => r.id == rideId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<RideModel> getUserRides(String userId) =>
+      _rides.where((r) => r.driverId == userId).toList();
 
   Future<void> init() async {
     final storage = await LocalStorageService.getInstance();
@@ -49,6 +74,153 @@ class RideProvider extends ChangeNotifier {
         _bookings.map((b) => b.toJson()).toList());
     await storage.saveList(AppConstants.storageKeyVehicles,
         _vehicles.map((v) => v.toJson()).toList());
+  }
+
+  Future<void> seedDummyData(String userId, String userName) async {
+    if (_rides.isNotEmpty) return;
+
+    final now = DateTime.now();
+
+    final dummyRides = [
+      RideModel(
+        id: _uuid.v4(),
+        driverId: 'driver_rajesh',
+        driverName: 'Rajesh Kumar',
+        vehicleId: '',
+        vehicleInfo: 'Toyota Camry (White)',
+        source: 'MG Road, Bangalore',
+        destination: 'Electronic City, Bangalore',
+        intermediateStops: ['Koramangala', 'HSR Layout', 'Silk Board'],
+        dateTime: now.add(const Duration(hours: 2)),
+        availableSeats: 3,
+        totalSeats: 4,
+        farePerSeat: 80,
+        status: 'active',
+      ),
+      RideModel(
+        id: _uuid.v4(),
+        driverId: 'driver_priya',
+        driverName: 'Priya Sharma',
+        vehicleId: '',
+        vehicleInfo: 'Honda City (Silver)',
+        source: 'Indiranagar, Bangalore',
+        destination: 'Whitefield, Bangalore',
+        intermediateStops: ['Domlur', 'Marathahalli', 'Brookefield'],
+        dateTime: now.add(const Duration(hours: 3)),
+        availableSeats: 2,
+        totalSeats: 4,
+        farePerSeat: 60,
+        status: 'active',
+      ),
+      RideModel(
+        id: _uuid.v4(),
+        driverId: 'driver_amit',
+        driverName: 'Amit Singh',
+        vehicleId: '',
+        vehicleInfo: 'Swift Dzire (Blue)',
+        source: 'Jayanagar, Bangalore',
+        destination: 'Majestic, Bangalore',
+        intermediateStops: ['Lalbagh', 'City Market'],
+        dateTime: now.add(const Duration(hours: 4)),
+        availableSeats: 1,
+        totalSeats: 3,
+        farePerSeat: 50,
+        status: 'active',
+      ),
+      RideModel(
+        id: _uuid.v4(),
+        driverId: 'driver_neha',
+        driverName: 'Neha Patel',
+        vehicleId: '',
+        vehicleInfo: 'Hyundai i20 (Red)',
+        source: 'Whitefield, Bangalore',
+        destination: 'Koramangala, Bangalore',
+        intermediateStops: ['Marathahalli', 'Bellandur', 'HSR Layout'],
+        dateTime: now.add(const Duration(hours: 5)),
+        availableSeats: 2,
+        totalSeats: 4,
+        farePerSeat: 70,
+        status: 'active',
+      ),
+      RideModel(
+        id: _uuid.v4(),
+        driverId: 'driver_vikram',
+        driverName: 'Vikram Reddy',
+        vehicleId: '',
+        vehicleInfo: 'Mahindra XUV700 (Black)',
+        source: 'Hebbal, Bangalore',
+        destination: 'JP Nagar, Bangalore',
+        intermediateStops: ['Yeshwanthpur', 'Mysore Road', 'Banashankari'],
+        dateTime: now.add(const Duration(hours: 6)),
+        availableSeats: 4,
+        totalSeats: 6,
+        farePerSeat: 45,
+        status: 'active',
+      ),
+    ];
+
+    _rides.addAll(dummyRides);
+
+    final pastRide = RideModel(
+      id: _uuid.v4(),
+      driverId: 'driver_completed',
+      driverName: 'Sneha Gupta',
+      vehicleId: '',
+      vehicleInfo: 'Maruti Suzuki (White)',
+      source: 'BTM Layout, Bangalore',
+      destination: 'Manyata Tech Park, Bangalore',
+      intermediateStops: ['Silk Board', 'Hebbal'],
+      dateTime: now.subtract(const Duration(days: 1)),
+      availableSeats: 0,
+      totalSeats: 3,
+      farePerSeat: 55,
+      status: 'completed',
+    );
+    _rides.add(pastRide);
+
+    final pastBooking = BookingModel(
+      id: _uuid.v4(),
+      rideId: pastRide.id,
+      riderId: userId,
+      riderName: userName,
+      seatsBooked: 1,
+      totalFare: 55,
+      status: 'completed',
+      otp: '998877',
+    );
+    _bookings.add(pastBooking);
+
+    final pastRide2 = RideModel(
+      id: _uuid.v4(),
+      driverId: 'driver_completed2',
+      driverName: 'Rahul Verma',
+      vehicleId: '',
+      vehicleInfo: 'Tata Nexon (Blue)',
+      source: 'Koramangala, Bangalore',
+      destination: 'Electronic City, Bangalore',
+      intermediateStops: ['HSR Layout', 'Silk Board'],
+      dateTime: now.subtract(const Duration(days: 2)),
+      availableSeats: 0,
+      totalSeats: 4,
+      farePerSeat: 65,
+      status: 'completed',
+    );
+    _rides.add(pastRide2);
+
+    final pastBooking2 = BookingModel(
+      id: _uuid.v4(),
+      rideId: pastRide2.id,
+      riderId: userId,
+      riderName: userName,
+      seatsBooked: 2,
+      totalFare: 130,
+      status: 'completed',
+      otp: '556677',
+    );
+    _bookings.add(pastBooking2);
+
+    await _saveToStorage();
+    notifyListeners();
   }
 
   Future<void> addVehicle(VehicleModel vehicle) async {

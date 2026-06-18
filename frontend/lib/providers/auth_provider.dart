@@ -49,7 +49,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> verifyOtp(String otp) async {
     if (_generatedOtp == null || _pendingPhone == null) return false;
-    if (otp != _generatedOtp && otp != '11111') return false;
+    if (otp != _generatedOtp && otp != '1111') return false;
 
     final storage = await LocalStorageService.getInstance();
     final usersList = storage.getList(AppConstants.storageKeyUsers);

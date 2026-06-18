@@ -54,16 +54,38 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 24),
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(Icons.person_outline,
+                      size: 40, color: AppTheme.primaryColor),
+                ),
+                const SizedBox(height: 20),
                 Text(
                   'Tell us about yourself',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
                       ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 4),
+                Text(
+                  'Complete your profile to start riding',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                ),
+                const SizedBox(height: 28),
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Full Name'),
+                  decoration: const InputDecoration(
+                    labelText: 'Full Name',
+                    prefixIcon: Icon(Icons.person),
+                  ),
                   validator: (v) =>
                       v == null || v.isEmpty ? 'Name is required' : null,
                 ),
@@ -71,7 +93,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'Email (Optional)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Email (Optional)',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -81,14 +106,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Emergency Contact',
                     counterText: '',
+                    prefixIcon: Icon(Icons.phone),
                   ),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 52,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _saveProfile,
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                     child: _isLoading
                         ? const SizedBox(
                             height: 20,
@@ -99,7 +130,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             ),
                           )
                         : const Text('Save & Continue',
-                            style: TextStyle(fontSize: 16)),
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],
