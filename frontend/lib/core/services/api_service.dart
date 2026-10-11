@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiService {
-  static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://10.0.2.2:3000/api');
+  static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'https://pool-it-new.vercel.app/api');
 
   static final http.Client _client = ChuckerHttpClient(http.Client());
 

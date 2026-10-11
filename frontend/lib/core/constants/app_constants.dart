@@ -1,8 +1,8 @@
 class AppConstants {
   static const String appName = 'Pool-It';
 
-  static const String supabaseUrl = 'https://jlymvzgpljnvnhvzawyp.supabase.co';
-  static const String supabaseAnonKey = 'sb_publishable_v0Ki9pi3-qchxZjy9N4j6g_9S7tYF0z';
+  static const String supabaseUrl = 'https://beiovshyiawmgprqnhrw.supabase.co';
+  static const String supabaseAnonKey = 'sb_publishable_qQvfOfRy_G-J4WVEAQsIkg_8rVRNVg3';
 
   static const bool dummyLoginEnabled = true;
   static const String dummyPhone = '9999999999';
