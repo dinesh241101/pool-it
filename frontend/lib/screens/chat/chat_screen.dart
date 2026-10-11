@@ -11,12 +11,7 @@ class ChatScreen extends StatefulWidget {
   final String chatPartnerName;
   final String chatPartnerId;
 
-  const ChatScreen({
-    super.key,
-    required this.ride,
-    required this.chatPartnerName,
-    required this.chatPartnerId,
-  });
+  const ChatScreen({super.key, required this.ride, required this.chatPartnerName, required this.chatPartnerId});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -31,11 +26,13 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _isCompleted = widget.ride.status == 'completed';
+    context.read<ChatProvider>().subscribeToRideChat(widget.ride.id);
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
   @override
   void dispose() {
+    context.read<ChatProvider>().unsubscribeFromChat();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -80,23 +77,18 @@ class _ChatScreenState extends State<ChatScreen> {
               radius: 16,
               backgroundColor: Colors.white.withValues(alpha: 0.2),
               child: Text(
-                widget.chatPartnerName.isNotEmpty
-                    ? widget.chatPartnerName[0].toUpperCase()
-                    : '?',
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
+                widget.chatPartnerName.isNotEmpty ? widget.chatPartnerName[0].toUpperCase() : '?',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.chatPartnerName,
-                    style: const TextStyle(fontSize: 16)),
+                Text(widget.chatPartnerName, style: const TextStyle(fontSize: 16)),
                 Text(
                   '${widget.ride.source} → ${widget.ride.destination}',
-                  style: TextStyle(
-                      fontSize: 11, color: Colors.white.withValues(alpha: 0.7)),
+                  style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.7)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -113,11 +105,12 @@ class _ChatScreenState extends State<ChatScreen> {
               color: Colors.green.shade50,
               child: Row(
                 children: [
-                  Icon(Icons.check_circle,
-                      size: 16, color: AppTheme.primaryColor),
+                  Icon(Icons.check_circle, size: 16, color: AppTheme.primaryColor),
                   const SizedBox(width: 8),
-                  const Text('Ride completed. Viewing chat history.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const Text(
+                    'Ride completed. Viewing chat history.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -127,13 +120,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.chat_bubble_outline,
-                            size: 48, color: AppTheme.textSecondary),
+                        Icon(Icons.chat_bubble_outline, size: 48, color: AppTheme.textSecondary),
                         const SizedBox(height: 12),
                         Text(
-                          _isCompleted
-                              ? 'No messages in this ride'
-                              : 'Start chatting with ${widget.chatPartnerName}',
+                          _isCompleted ? 'No messages in this ride' : 'Start chatting with ${widget.chatPartnerName}',
                           style: TextStyle(color: AppTheme.textSecondary),
                         ),
                       ],
@@ -146,11 +136,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemBuilder: (context, index) {
                       final msg = messages[index];
                       final isMe = msg.senderId == currentUserId;
-                      return _MessageBubble(
-                        message: msg,
-                        isMe: isMe,
-                        showName: !isMe,
-                      );
+                      return _MessageBubble(message: msg, isMe: isMe, showName: !isMe);
                     },
                   ),
           ),
@@ -160,11 +146,7 @@ class _ChatScreenState extends State<ChatScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2)),
                 ],
               ),
               child: SafeArea(
@@ -181,8 +163,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         ),
                         textInputAction: TextInputAction.send,
                         onSubmitted: (_) => _sendMessage(),
@@ -213,34 +194,23 @@ class _MessageBubble extends StatelessWidget {
   final bool isMe;
   final bool showName;
 
-  const _MessageBubble({
-    required this.message,
-    required this.isMe,
-    this.showName = true,
-  });
+  const _MessageBubble({required this.message, required this.isMe, this.showName = true});
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment:
-          isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         if (showName)
           Padding(
             padding: const EdgeInsets.only(left: 4, top: 12, bottom: 2),
             child: Text(
               message.senderName,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textSecondary,
-              ),
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
             ),
           ),
         Container(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.75,
-          ),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
           margin: const EdgeInsets.only(bottom: 4),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
@@ -255,13 +225,7 @@ class _MessageBubble extends StatelessWidget {
           child: Column(
             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              Text(
-                message.message,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: isMe ? Colors.white : Colors.black87,
-                ),
-              ),
+              Text(message.message, style: TextStyle(fontSize: 15, color: isMe ? Colors.white : Colors.black87)),
               const SizedBox(height: 2),
               Text(
                 '${message.timestamp.hour.toString().padLeft(2, '0')}:${message.timestamp.minute.toString().padLeft(2, '0')}',

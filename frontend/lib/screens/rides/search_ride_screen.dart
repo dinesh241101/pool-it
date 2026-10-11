@@ -27,16 +27,15 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
 
   void _search() {
     if (_sourceController.text.isEmpty || _destController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter source and destination')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter source and destination')));
       return;
     }
     context.read<RideProvider>().searchRides(
-          source: _sourceController.text.trim(),
-          destination: _destController.text.trim(),
-          date: _selectedDate,
-        );
+      source: _sourceController.text.trim(),
+      destination: _destController.text.trim(),
+      currentUserId: context.read<AuthProvider>().currentUser?.id ?? '',
+      date: _selectedDate,
+    );
   }
 
   Future<void> _pickDate() async {
@@ -52,13 +51,6 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
   @override
   Widget build(BuildContext context) {
     final rideProv = context.watch<RideProvider>();
-    final auth = context.watch<AuthProvider>();
-    final isGuest = auth.currentUser?.isGuest ?? false;
-
-    final displayResults = isGuest && rideProv.searchResults.length > 5
-        ? rideProv.searchResults.sublist(0, 5)
-        : rideProv.searchResults;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Find a Ride')),
       body: SingleChildScrollView(
@@ -72,11 +64,7 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
                 ],
               ),
               child: Column(
@@ -91,16 +79,14 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
                   const SizedBox(height: 8),
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: Icon(Icons.arrow_downward,
-                        size: 20, color: AppTheme.textSecondary),
+                    child: Icon(Icons.arrow_downward, size: 20, color: AppTheme.textSecondary),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _destController,
                     decoration: const InputDecoration(
                       labelText: 'To',
-                      prefixIcon:
-                          Icon(Icons.location_on, color: AppTheme.errorColor),
+                      prefixIcon: Icon(Icons.location_on, color: AppTheme.errorColor),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -118,9 +104,7 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
                           ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             side: BorderSide(color: Colors.grey.shade300),
                           ),
                         ),
@@ -131,9 +115,7 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
                           onPressed: _search,
                           icon: const Icon(Icons.search, size: 20),
                           label: const Text('Search'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
+                          style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
                         ),
                       ),
                     ],
@@ -152,76 +134,39 @@ class _SearchRideScreenState extends State<SearchRideScreen> {
             ),
             const SizedBox(height: 20),
             if (rideProv.searchResults.isNotEmpty) ...[
-              if (isGuest && rideProv.searchResults.length > 5)
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline,
-                          color: Colors.amber.shade700, size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Showing 5 of ${rideProv.searchResults.length} rides. Sign in to view all.',
-                          style: TextStyle(
-                              color: Colors.amber.shade900, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               Padding(
                 padding: const EdgeInsets.only(left: 4, bottom: 12),
                 child: Text(
-                  '${displayResults.length} ride${displayResults.length > 1 ? 's' : ''} found',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
-                      ),
+                  '${rideProv.searchResults.length} ride${rideProv.searchResults.length > 1 ? 's' : ''} found',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
                 ),
               ),
-              ...displayResults.map((ride) => _RideSearchCard(
-                    ride: ride,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => RideDetailScreen(ride: ride),
-                      ),
-                    ),
-                  )),
+              ...rideProv.searchResults.map(
+                (ride) => _RideSearchCard(
+                  ride: ride,
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RideDetailScreen(ride: ride))),
+                ),
+              ),
             ] else if (rideProv.searchResults.isEmpty &&
-                (_sourceController.text.isNotEmpty ||
-                    _destController.text.isNotEmpty)) ...[
+                (_sourceController.text.isNotEmpty || _destController.text.isNotEmpty)) ...[
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(40),
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.search_off,
-                            size: 56, color: AppTheme.textSecondary.withValues(alpha: 0.5)),
+                        Icon(Icons.search_off, size: 56, color: AppTheme.textSecondary.withValues(alpha: 0.5)),
                         const SizedBox(height: 16),
                         Text(
                           'No rides found',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(color: AppTheme.textSecondary),
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppTheme.textSecondary),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Try changing the route or date',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: AppTheme.textSecondary),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
                         ),
                       ],
                     ),
@@ -260,20 +205,13 @@ class _RideSearchCard extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF43A047), Color(0xFF2E7D32)],
-                      ),
+                      gradient: const LinearGradient(colors: [Color(0xFF43A047), Color(0xFF2E7D32)]),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
                       child: Text(
-                        ride.driverName.isNotEmpty
-                            ? ride.driverName[0].toUpperCase()
-                            : '?',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18),
+                        ride.driverName.isNotEmpty ? ride.driverName[0].toUpperCase() : '?',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                     ),
                   ),
@@ -282,34 +220,11 @@ class _RideSearchCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(ride.driverName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 16)),
+                        Text(ride.driverName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                         if (ride.vehicleInfo.isNotEmpty)
-                          Text(ride.vehicleInfo,
-                              style: TextStyle(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 13)),
+                          Text(ride.vehicleInfo, style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
                       ],
                     ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '₹${ride.farePerSeat}',
-                        style: const TextStyle(
-                          color: AppTheme.primaryColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                      Text(
-                        '/seat',
-                        style: TextStyle(
-                            color: AppTheme.textSecondary, fontSize: 11),
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -319,29 +234,22 @@ class _RideSearchCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppTheme.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${ride.availableSeats} seat${ride.availableSeats > 1 ? 's' : ''} left',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryColor,
-                      ),
+                      '${ride.seats} seat${ride.seats > 1 ? 's' : ''} left',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryColor),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Icon(Icons.access_time,
-                      size: 14, color: AppTheme.textSecondary),
+                  Icon(Icons.access_time, size: 14, color: AppTheme.textSecondary),
                   const SizedBox(width: 4),
                   Text(
                     '${ride.dateTime.day}/${ride.dateTime.month} ${ride.dateTime.hour.toString().padLeft(2, '0')}:${ride.dateTime.minute.toString().padLeft(2, '0')}',
-                    style: TextStyle(
-                        color: AppTheme.textSecondary, fontSize: 12),
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                   ),
                 ],
               ),
@@ -360,12 +268,8 @@ class _SearchRouteTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stops = [ride.source, ...ride.intermediateStops, ride.destination];
-    final stopColors = [
-      AppTheme.primaryColor,
-      ...List.filled(ride.intermediateStops.length, AppTheme.accentColor),
-      AppTheme.errorColor,
-    ];
+    final stops = [ride.source, ride.destination];
+    final stopColors = [AppTheme.primaryColor, AppTheme.errorColor];
 
     return Column(
       children: List.generate(stops.length, (index) {
@@ -384,37 +288,21 @@ class _SearchRouteTimeline extends StatelessWidget {
                         color: stopColors[index],
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: stopColors[index].withValues(alpha: 0.3),
-                            blurRadius: 4,
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: stopColors[index].withValues(alpha: 0.3), blurRadius: 4)],
                       ),
                     ),
-                    if (index < stops.length - 1)
-                      Expanded(
-                        child: Container(
-                          width: 1.5,
-                          color: Colors.grey.shade300,
-                        ),
-                      ),
+                    if (index < stops.length - 1) Expanded(child: Container(width: 1.5, color: Colors.grey.shade300)),
                   ],
                 ),
               ),
               const SizedBox(width: 10),
               Padding(
-                padding: EdgeInsets.only(
-                  top: index == 0 ? 0 : 4,
-                  bottom: index < stops.length - 1 ? 4 : 0,
-                ),
+                padding: EdgeInsets.only(top: index == 0 ? 0 : 4, bottom: index < stops.length - 1 ? 4 : 0),
                 child: Text(
                   stops[index],
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: index == 0 || index == stops.length - 1
-                        ? FontWeight.w600
-                        : FontWeight.normal,
+                    fontWeight: index == 0 || index == stops.length - 1 ? FontWeight.w600 : FontWeight.normal,
                     color: stopColors[index],
                   ),
                 ),

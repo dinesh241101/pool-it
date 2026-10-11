@@ -1,5 +1,8 @@
-const jwt = require('jsonwebtoken');
+const { createClient } = require('@supabase/supabase-js');
 const prisma = require('../config/database');
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 const authenticate = async (req, res, next) => {
   try {
@@ -9,21 +12,51 @@ const authenticate = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, name: true, phone: true, email: true, isDriver: true },
-    });
+    const supabaseClient = createClient(
+      supabaseUrl || 'http://localhost',
+      supabaseAnonKey || 'missing-anon-key',
+      {
+        auth: { autoRefreshToken: false, persistSession: false },
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      }
+    );
 
-    if (!user) {
-      return res.status(401).json({ error: 'User not found' });
+    const { data: { user: supabaseUser }, error } = await supabaseClient.auth.getUser(token);
+
+    if (error || !supabaseUser) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    req.user = user;
+    const userId = supabaseUser.id;
+
+    let dbUser = await prisma.user.findUnique({ where: { id: userId } });
+
+    if (!dbUser) {
+      dbUser = await prisma.user.create({
+        data: {
+          id: userId,
+          phone: supabaseUser.phone || '',
+          name: supabaseUser.user_metadata?.name || '',
+          email: supabaseUser.email || '',
+        },
+      });
+    }
+
+    req.user = {
+      id: dbUser.id,
+      name: dbUser.name,
+      phone: dbUser.phone,
+      email: dbUser.email,
+      isDriver: dbUser.isDriver,
+      profilePic: dbUser.profilePic,
+    };
+    req.supabaseUserId = userId;
+
     next();
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+    console.error('Auth error:', error);
+    if (error.message?.includes('AuthApiError') || error.status === 401) {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
     next(error);

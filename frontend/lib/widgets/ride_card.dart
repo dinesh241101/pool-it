@@ -25,11 +25,8 @@ class RideCard extends StatelessWidget {
                     backgroundColor: AppTheme.primaryColor,
                     radius: 20,
                     child: Text(
-                      ride.driverName.isNotEmpty
-                          ? ride.driverName[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
+                      ride.driverName.isNotEmpty ? ride.driverName[0].toUpperCase() : '?',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -37,34 +34,21 @@ class RideCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(ride.driverName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 16)),
+                        Text(ride.driverName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                         if (ride.vehicleInfo.isNotEmpty)
-                          Text(ride.vehicleInfo,
-                              style: TextStyle(
-                                  color: AppTheme.textSecondary, fontSize: 13)),
+                          Text(ride.vehicleInfo, style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
                       ],
                     ),
                   ),
-                  Text(
-                    '₹${ride.farePerSeat}',
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
+                  const Icon(Icons.pets, color: AppTheme.accentColor, size: 20),
                 ],
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.trip_origin,
-                      size: 16, color: AppTheme.primaryColor),
+                  const Icon(Icons.trip_origin, size: 16, color: AppTheme.primaryColor),
                   const SizedBox(width: 8),
-                  Text(ride.source,
-                      style: const TextStyle(fontWeight: FontWeight.w500)),
+                  Text(ride.source, style: const TextStyle(fontWeight: FontWeight.w500)),
                 ],
               ),
               const Padding(
@@ -73,30 +57,23 @@ class RideCard extends StatelessWidget {
               ),
               Row(
                 children: [
-                  const Icon(Icons.location_on,
-                      size: 16, color: AppTheme.errorColor),
+                  const Icon(Icons.location_on, size: 16, color: AppTheme.errorColor),
                   const SizedBox(width: 8),
-                  Text(ride.destination,
-                      style: const TextStyle(fontWeight: FontWeight.w500)),
+                  Text(ride.destination, style: const TextStyle(fontWeight: FontWeight.w500)),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.event_seat,
-                      size: 16, color: AppTheme.textSecondary),
+                  const Icon(Icons.event_seat, size: 16, color: AppTheme.textSecondary),
                   const SizedBox(width: 4),
-                  Text('${ride.availableSeats} seats available',
-                      style:
-                          TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                  Text('${ride.seats} seats available', style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
                   const Spacer(),
-                  const Icon(Icons.access_time,
-                      size: 16, color: AppTheme.textSecondary),
+                  const Icon(Icons.access_time, size: 16, color: AppTheme.textSecondary),
                   const SizedBox(width: 4),
                   Text(
                     '${ride.dateTime.day}/${ride.dateTime.month} ${ride.dateTime.hour}:${ride.dateTime.minute.toString().padLeft(2, '0')}',
-                    style:
-                        TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
                   ),
                 ],
               ),

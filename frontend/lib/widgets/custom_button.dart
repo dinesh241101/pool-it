@@ -32,18 +32,12 @@ class CustomButton extends StatelessWidget {
             ? const SizedBox(
                 height: 20,
                 width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 20),
-                    const SizedBox(width: 8),
-                  ],
+                  if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: 8)],
                   Text(text, style: const TextStyle(fontSize: 16)),
                 ],
               ),

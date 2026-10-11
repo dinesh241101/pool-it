@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/validators.dart';
 import 'otp_screen.dart';
+import 'profile_setup_screen.dart';
+import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,18 +26,42 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _dummyLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      final ok = await auth.dummyLogin();
+      if (!mounted) return;
+      if (ok) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => auth.currentUser?.name.isEmpty == true ? const ProfileSetupScreen() : const HomeScreen(),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Dummy login failed: ${auth.error ?? 'Unknown error'}')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _sendOtp() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    await context.read<AuthProvider>().sendOtp(_phoneController.text.trim());
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OtpScreen(phone: _phoneController.text.trim()),
-      ),
-    );
+    try {
+      await context.read<AuthProvider>().sendOtp(_phoneController.text.trim());
+      if (!mounted) return;
+      Navigator.push(context, MaterialPageRoute(builder: (_) => OtpScreen(phone: _phoneController.text.trim())));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send OTP: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -52,10 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   end: Alignment.bottomRight,
                   colors: [Color(0xFF43A047), Color(0xFF2E7D32), Color(0xFF1B5E20)],
                 ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
-                ),
+                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
               ),
               child: Column(
                 children: [
@@ -65,30 +89,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    child: const Icon(
-                      Icons.directions_car,
-                      size: 64,
-                      color: Colors.white,
-                    ),
+                    child: const Icon(Icons.directions_car, size: 64, color: Colors.white),
                   ),
                   const SizedBox(height: 20),
                   const Text(
                     'Pool-It',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 1,
-                    ),
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Smart Car Pooling',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                  ),
+                  Text('Smart Car Pooling', style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.8))),
                 ],
               ),
             ),
@@ -102,17 +111,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'Welcome Back',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Enter your phone number to continue',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.textSecondary),
                     ),
                     const SizedBox(height: 32),
                     TextFormField(
@@ -135,47 +141,39 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: _isLoading ? null : _sendOtp,
                         style: ElevatedButton.styleFrom(
                           elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
                         child: _isLoading
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
-                            : const Text(
-                                'Send OTP',
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600),
-                              ),
+                            : const Text('Send OTP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                       ),
                     ),
                     const SizedBox(height: 16),
+                    if (AppConstants.dummyLoginEnabled) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: OutlinedButton.icon(
+                          onPressed: _isLoading ? null : _dummyLogin,
+                          icon: const Icon(Icons.science_outlined, size: 20),
+                          label: const Text(
+                            'Dummy Login (Skip OTP)',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     SizedBox(
                       width: double.infinity,
-                      height: 52,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          await context.read<AuthProvider>().loginAsGuest();
-                        },
-                        icon: const Icon(Icons.person_outline),
-                        label: const Text(
-                          'Continue as Guest',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          side: BorderSide(color: Colors.grey.shade300),
-                        ),
+                      child: Text(
+                        'You will receive a 6-digit OTP via WhatsApp to verify your number.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                       ),
                     ),
                   ],

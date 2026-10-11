@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -55,7 +56,7 @@ model Ride {
   availableSeats    Int
   totalSeats        Int
   farePerSeat       Float
-  status            String   @default("active") // active, started, completed, cancelled
+  status            String   @default("active")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -71,7 +72,7 @@ model Booking {
   riderId     String
   seatsBooked Int
   totalFare   Float
-  status      String   @default("confirmed") // confirmed, started, completed, cancelled
+  status      String   @default("confirmed")
   otp         String   @default("")
   otpExpiry   DateTime
   otpAttempts Int      @default(0)
@@ -87,8 +88,8 @@ model Payment {
   id            String   @id @default(uuid())
   bookingId     String   @unique
   amount        Float
-  method        String   @default("") // upi, card, wallet, netbanking
-  status        String   @default("pending") // pending, completed, failed, refunded
+  method        String   @default("")
+  status        String   @default("pending")
   transactionId String   @default("")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -101,7 +102,7 @@ model Rating {
   rideId      String
   reviewerId  String
   revieweeId  String
-  rating      Int      // 1-5
+  rating      Int
   review      String   @default("")
   createdAt   DateTime @default(now())
 
@@ -127,7 +128,7 @@ model SosAlert {
   rideId    String?
   latitude  Float
   longitude Float
-  status    String   @default("active") // active, resolved
+  status    String   @default("active")
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])

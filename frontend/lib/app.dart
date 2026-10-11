@@ -1,3 +1,4 @@
+import 'package:chucker_flutter/chucker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
@@ -14,11 +15,10 @@ class RideMateApp extends StatelessWidget {
     return MaterialApp(
       title: 'Pool-It',
       debugShowCheckedModeBanner: false,
+      navigatorKey: ChuckerFlutter.navigatorKey,
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),
-      routes: {
-        '/auth': (context) => const AuthGate(),
-      },
+      routes: {'/auth': (context) => const AuthGate()},
     );
   }
 }

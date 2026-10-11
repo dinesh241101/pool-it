@@ -13,10 +13,7 @@ class AppTheme {
   static const Color successColor = Color(0xFF43A047);
   static const Color warningColor = Color(0xFFFF8F00);
 
-  static List<Color> primaryGradient = [
-    primaryColor,
-    primaryDark,
-  ];
+  static List<Color> primaryGradient = [primaryColor, primaryDark];
 
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
@@ -27,9 +24,7 @@ class AppTheme {
       color: cardColor,
       elevation: 0,
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(16)),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: primaryColor,
@@ -42,23 +37,15 @@ class AppTheme {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         elevation: 0,
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.grey.shade50,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: primaryColor, width: 2),
@@ -66,11 +53,7 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       labelStyle: const TextStyle(color: textSecondary),
     ),
-    dividerTheme: const DividerThemeData(
-      space: 0,
-      thickness: 1,
-      color: Color(0xFFE5E7EB),
-    ),
+    dividerTheme: const DividerThemeData(space: 0, thickness: 1, color: Color(0xFFE5E7EB)),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: Colors.white,
       selectedItemColor: primaryColor,

@@ -12,7 +12,10 @@ class RideModel {
   final int totalSeats;
   final double farePerSeat;
   final String status; // active, booked, started, completed, cancelled
+  final String petPolicy; // allowed, not_allowed, not_preferred
   final DateTime createdAt;
+
+  int get seats => availableSeats;
 
   RideModel({
     required this.id,
@@ -28,64 +31,61 @@ class RideModel {
     required this.totalSeats,
     required this.farePerSeat,
     this.status = 'active',
+    this.petPolicy = 'not_allowed',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'driverId': driverId,
-        'driverName': driverName,
-        'vehicleId': vehicleId,
-        'vehicleInfo': vehicleInfo,
-        'source': source,
-        'destination': destination,
-        'intermediateStops': intermediateStops,
-        'dateTime': dateTime.toIso8601String(),
-        'availableSeats': availableSeats,
-        'totalSeats': totalSeats,
-        'farePerSeat': farePerSeat,
-        'status': status,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'driverId': driverId,
+    'driverName': driverName,
+    'vehicleId': vehicleId,
+    'vehicleInfo': vehicleInfo,
+    'source': source,
+    'destination': destination,
+    'intermediateStops': intermediateStops,
+    'dateTime': dateTime.toIso8601String(),
+    'availableSeats': availableSeats,
+    'totalSeats': totalSeats,
+    'farePerSeat': farePerSeat,
+    'status': status,
+    'petPolicy': petPolicy,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory RideModel.fromJson(Map<String, dynamic> json) => RideModel(
-        id: json['id'],
-        driverId: json['driverId'],
-        driverName: json['driverName'],
-        vehicleId: json['vehicleId'],
-        vehicleInfo: json['vehicleInfo'] ?? '',
-        source: json['source'],
-        destination: json['destination'],
-        intermediateStops:
-            List<String>.from(json['intermediateStops'] ?? []),
-        dateTime: DateTime.parse(json['dateTime']),
-        availableSeats: json['availableSeats'],
-        totalSeats: json['totalSeats'],
-        farePerSeat: (json['farePerSeat'] as num).toDouble(),
-        status: json['status'] ?? 'active',
-        createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'])
-            : null,
-      );
+    id: json['id'],
+    driverId: json['driverId'],
+    driverName: json['driverName'],
+    vehicleId: json['vehicleId'],
+    vehicleInfo: json['vehicleInfo'] ?? '',
+    source: json['source'],
+    destination: json['destination'],
+    intermediateStops: List<String>.from(json['intermediateStops'] ?? []),
+    dateTime: DateTime.parse(json['dateTime']),
+    availableSeats: json['availableSeats'],
+    totalSeats: json['totalSeats'],
+    farePerSeat: (json['farePerSeat'] as num).toDouble(),
+    status: json['status'] ?? 'active',
+    petPolicy: json['petPolicy'] ?? 'not_allowed',
+    createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+  );
 
-  RideModel copyWith({
-    int? availableSeats,
-    String? status,
-  }) =>
-      RideModel(
-        id: id,
-        driverId: driverId,
-        driverName: driverName,
-        vehicleId: vehicleId,
-        vehicleInfo: vehicleInfo,
-        source: source,
-        destination: destination,
-        intermediateStops: intermediateStops,
-        dateTime: dateTime,
-        availableSeats: availableSeats ?? this.availableSeats,
-        totalSeats: totalSeats,
-        farePerSeat: farePerSeat,
-        status: status ?? this.status,
-        createdAt: createdAt,
-      );
+  RideModel copyWith({int? availableSeats, String? status}) => RideModel(
+    id: id,
+    driverId: driverId,
+    driverName: driverName,
+    vehicleId: vehicleId,
+    vehicleInfo: vehicleInfo,
+    source: source,
+    destination: destination,
+    intermediateStops: intermediateStops,
+    dateTime: dateTime,
+    availableSeats: availableSeats ?? this.availableSeats,
+    totalSeats: totalSeats,
+    farePerSeat: farePerSeat,
+    status: status ?? this.status,
+    petPolicy: petPolicy,
+    createdAt: createdAt,
+  );
 }

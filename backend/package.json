@@ -6,12 +6,15 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "postinstall": "prisma generate",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
+    "prisma:push": "npx prisma db push",
     "prisma:seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
+    "@supabase/supabase-js": "^2.39.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.1",
@@ -19,11 +22,13 @@
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "socket.io": "^4.7.4",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.3",
     "prisma": "^5.10.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

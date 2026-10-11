@@ -30,15 +30,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     await context.read<AuthProvider>().updateProfile(
-          name: _nameController.text.trim(),
-          email: _emailController.text.trim(),
-          emergencyContact: _emergencyController.text.trim(),
-        );
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      emergencyContact: _emergencyController.text.trim(),
     );
+    if (!mounted) return;
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
   @override
@@ -61,33 +58,25 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Icon(Icons.person_outline,
-                      size: 40, color: AppTheme.primaryColor),
+                  child: const Icon(Icons.person_outline, size: 40, color: AppTheme.primaryColor),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   'Tell us about yourself',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Complete your profile to start riding',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.textSecondary),
                 ),
                 const SizedBox(height: 28),
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Name is required' : null,
+                  decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person)),
+                  validator: (v) => v == null || v.isEmpty ? 'Name is required' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -116,22 +105,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _saveProfile,
                     style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     child: _isLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Save & Continue',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w600)),
+                        : const Text('Save & Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],

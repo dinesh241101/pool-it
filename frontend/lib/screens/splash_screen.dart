@@ -28,11 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF43A047),
-              Color(0xFF2E7D32),
-              Color(0xFF1B5E20),
-            ],
+            colors: [Color(0xFF43A047), Color(0xFF2E7D32), Color(0xFF1B5E20)],
           ),
         ),
         child: Column(
@@ -44,30 +40,17 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: const Icon(
-                Icons.directions_car,
-                size: 80,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.directions_car, size: 80, color: Colors.white),
             ),
             const SizedBox(height: 24),
             const Text(
               'Pool-It',
-              style: TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 2,
-              ),
+              style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 2),
             ),
             const SizedBox(height: 8),
             Text(
               'Smart Car Pooling',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white.withValues(alpha: 0.8),
-                letterSpacing: 1,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.8), letterSpacing: 1),
             ),
             const SizedBox(height: 48),
             SizedBox(
@@ -75,9 +58,7 @@ class _SplashScreenState extends State<SplashScreen> {
               height: 24,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Colors.white.withValues(alpha: 0.7),
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white.withValues(alpha: 0.7)),
               ),
             ),
           ],

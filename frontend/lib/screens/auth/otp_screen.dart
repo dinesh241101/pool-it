@@ -27,27 +27,18 @@ class _OtpScreenState extends State<OtpScreen> {
   Future<void> _verifyOtp() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    final success =
-        await context.read<AuthProvider>().verifyOtp(_otpController.text.trim());
+    final success = await context.read<AuthProvider>().verifyOtp(widget.phone, _otpController.text.trim());
     if (!mounted) return;
     setState(() => _isLoading = false);
     if (success) {
       final auth = context.read<AuthProvider>();
       if (auth.currentUser?.name.isEmpty == true) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ProfileSetupScreen()));
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid OTP. Please try again.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid OTP. Please try again.')));
     }
   }
 
@@ -71,62 +62,34 @@ class _OtpScreenState extends State<OtpScreen> {
                     color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Icon(
-                    Icons.smartphone,
-                    size: 40,
-                    color: AppTheme.primaryColor,
-                  ),
+                  child: const Icon(Icons.smartphone, size: 40, color: AppTheme.primaryColor),
                 ),
                 const SizedBox(height: 20),
                 Text(
                   'Enter OTP',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'OTP sent to ${widget.phone}',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber.shade200),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.amber.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Use 1111 for testing',
-                          style: TextStyle(color: Colors.amber.shade800, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
+                  'OTP sent via WhatsApp to ${widget.phone}',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.textSecondary),
                 ),
                 const SizedBox(height: 24),
                 TextFormField(
                   controller: _otpController,
                   keyboardType: TextInputType.number,
-                  maxLength: 4,
+                  maxLength: 6,
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 28, letterSpacing: 16, fontWeight: FontWeight.bold),
-                  decoration: const InputDecoration(
-                    labelText: 'OTP',
-                    counterText: '',
-                    hintText: '1111',
-                  ),
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'OTP is required' : null,
+                  decoration: const InputDecoration(labelText: 'OTP', counterText: '', hintText: 'Enter 6-digit OTP'),
+                  validator: (v) => v == null || v.isEmpty ? 'OTP is required' : null,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'QA test: use 11111',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -136,21 +99,15 @@ class _OtpScreenState extends State<OtpScreen> {
                     onPressed: _isLoading ? null : _verifyOtp,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     child: _isLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Verify OTP',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        : const Text('Verify OTP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                 ),
               ],

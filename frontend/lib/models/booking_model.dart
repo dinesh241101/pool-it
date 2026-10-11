@@ -23,58 +23,48 @@ class BookingModel {
     DateTime? otpExpiry,
     this.otpAttempts = 0,
     DateTime? createdAt,
-  })  : otpExpiry = otpExpiry ?? DateTime.now(),
-        createdAt = createdAt ?? DateTime.now();
+  }) : otpExpiry = otpExpiry ?? DateTime.now(),
+       createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'rideId': rideId,
-        'riderId': riderId,
-        'riderName': riderName,
-        'seatsBooked': seatsBooked,
-        'totalFare': totalFare,
-        'status': status,
-        'otp': otp,
-        'otpExpiry': otpExpiry.toIso8601String(),
-        'otpAttempts': otpAttempts,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'rideId': rideId,
+    'riderId': riderId,
+    'riderName': riderName,
+    'seatsBooked': seatsBooked,
+    'totalFare': totalFare,
+    'status': status,
+    'otp': otp,
+    'otpExpiry': otpExpiry.toIso8601String(),
+    'otpAttempts': otpAttempts,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory BookingModel.fromJson(Map<String, dynamic> json) => BookingModel(
-        id: json['id'],
-        rideId: json['rideId'],
-        riderId: json['riderId'],
-        riderName: json['riderName'],
-        seatsBooked: json['seatsBooked'],
-        totalFare: (json['totalFare'] as num).toDouble(),
-        status: json['status'] ?? 'confirmed',
-        otp: json['otp'] ?? '',
-        otpExpiry: json['otpExpiry'] != null
-            ? DateTime.parse(json['otpExpiry'])
-            : null,
-        otpAttempts: json['otpAttempts'] ?? 0,
-        createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'])
-            : null,
-      );
+    id: json['id'],
+    rideId: json['rideId'],
+    riderId: json['riderId'],
+    riderName: json['riderName'],
+    seatsBooked: json['seatsBooked'],
+    totalFare: (json['totalFare'] as num).toDouble(),
+    status: json['status'] ?? 'confirmed',
+    otp: json['otp'] ?? '',
+    otpExpiry: json['otpExpiry'] != null ? DateTime.parse(json['otpExpiry']) : null,
+    otpAttempts: json['otpAttempts'] ?? 0,
+    createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+  );
 
-  BookingModel copyWith({
-    String? status,
-    String? otp,
-    DateTime? otpExpiry,
-    int? otpAttempts,
-  }) =>
-      BookingModel(
-        id: id,
-        rideId: rideId,
-        riderId: riderId,
-        riderName: riderName,
-        seatsBooked: seatsBooked,
-        totalFare: totalFare,
-        status: status ?? this.status,
-        otp: otp ?? this.otp,
-        otpExpiry: otpExpiry ?? this.otpExpiry,
-        otpAttempts: otpAttempts ?? this.otpAttempts,
-        createdAt: createdAt,
-      );
+  BookingModel copyWith({String? status, String? otp, DateTime? otpExpiry, int? otpAttempts}) => BookingModel(
+    id: id,
+    rideId: rideId,
+    riderId: riderId,
+    riderName: riderName,
+    seatsBooked: seatsBooked,
+    totalFare: totalFare,
+    status: status ?? this.status,
+    otp: otp ?? this.otp,
+    otpExpiry: otpExpiry ?? this.otpExpiry,
+    otpAttempts: otpAttempts ?? this.otpAttempts,
+    createdAt: createdAt,
+  );
 }

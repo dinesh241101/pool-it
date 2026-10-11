@@ -16,20 +16,20 @@ class ChatMessage {
   }) : timestamp = timestamp ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'rideId': rideId,
-        'senderId': senderId,
-        'senderName': senderName,
-        'message': message,
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'id': id,
+    'rideId': rideId,
+    'senderId': senderId,
+    'senderName': senderName,
+    'message': message,
+    'timestamp': timestamp.toIso8601String(),
+  };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
-        id: json['id'],
-        rideId: json['rideId'],
-        senderId: json['senderId'],
-        senderName: json['senderName'],
-        message: json['message'],
-        timestamp: DateTime.parse(json['timestamp']),
-      );
+    id: json['id'],
+    rideId: json['rideId'],
+    senderId: json['senderId'],
+    senderName: json['senderName'],
+    message: json['message'],
+    timestamp: DateTime.parse(json['timestamp']),
+  );
 }

@@ -22,30 +22,28 @@ class VehicleModel {
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'userId': userId,
-        'make': make,
-        'model': model,
-        'year': year,
-        'color': color,
-        'licensePlate': licensePlate,
-        'seats': seats,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'userId': userId,
+    'make': make,
+    'model': model,
+    'year': year,
+    'color': color,
+    'licensePlate': licensePlate,
+    'seats': seats,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   factory VehicleModel.fromJson(Map<String, dynamic> json) => VehicleModel(
-        id: json['id'],
-        userId: json['userId'],
-        make: json['make'],
-        model: json['model'],
-        year: json['year'],
-        color: json['color'],
-        licensePlate: json['licensePlate'],
-        seats: json['seats'],
-        createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'])
-            : null,
-      );
+    id: json['id'],
+    userId: json['userId'],
+    make: json['make'],
+    model: json['model'],
+    year: json['year'],
+    color: json['color'],
+    licensePlate: json['licensePlate'],
+    seats: json['seats'],
+    createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+  );
 
   String get displayName => '$make $model ($color)';
 }
