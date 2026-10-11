@@ -1,6 +1,5 @@
 const crypto = require('crypto');
 const { supabaseAdmin } = require('../config/supabase');
-const prisma = require('../config/database');
 const { sendWhatsAppText } = require('../config/openwa');
 
 const OTP_TTL_SECONDS = parseInt(process.env.OTP_TTL_SECONDS || '300', 10);
@@ -21,33 +20,66 @@ function isValidPhone(phone) {
   return /^[6-9]\d{9}$/.test(phone);
 }
 
+function syntheticEmail(phone) {
+  return `poolit_${phone}@poolit.in`;
+}
+
 function extractTokenHash(value) {
-  if (!value) return null;
-  if (typeof value === 'string') {
-    const direct = value.match(/token_hash=([^&#]+)/);
-    if (direct) return decodeURIComponent(direct[1]);
-    try {
-      const u = new URL(value);
-      const q = u.searchParams.get('token_hash');
-      if (q) return q;
-      const params = new URLSearchParams(u.hash.replace(/^#/, ''));
-      const h = params.get('token_hash');
-      if (h) return h;
-    } catch (_) {}
-  }
+  if (!value || typeof value !== 'string') return null;
+  const direct = value.match(/[?&](?:token|token_hash)=([^&#]+)/);
+  if (direct) return decodeURIComponent(direct[1]);
+  try {
+    const u = new URL(value);
+    const q = u.searchParams.get('token') || u.searchParams.get('token_hash');
+    if (q) return q;
+    const params = new URLSearchParams(u.hash.replace(/^#/, ''));
+    const h = params.get('token') || params.get('token_hash');
+    if (h) return h;
+  } catch (_) {}
   return null;
 }
 
+// Look up an existing auth user by phone. Uses the Supabase Admin API only
+// (no direct DB access), so it does not depend on DATABASE_URL/Prisma.
 async function findAuthUserByPhone(phone) {
+  const email = syntheticEmail(phone);
+  const normalizedPhone = `91${phone}`;
+
   try {
-    const rows = await prisma.$queryRaw`
-      select id, email, phone from auth.users where phone = ${`+91${phone}`} limit 1
-    `;
-    return rows && rows.length ? rows[0] : null;
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('phone', phone)
+      .maybeSingle();
+    if (profile && profile.id) {
+      const { data } = await supabaseAdmin.auth.admin.getUserById(profile.id);
+      if (data && data.user) return data.user;
+    }
   } catch (err) {
-    console.error('findAuthUserByPhone error:', err.message);
-    return null;
+    console.error('findAuthUserByPhone (profiles) error:', err.message);
   }
+
+  try {
+    let page = 1;
+    while (page <= 50) {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+      if (error) throw error;
+      const users = (data && data.users) || [];
+      const match = users.find(
+        (u) =>
+          u.email === email ||
+          u.phone === normalizedPhone ||
+          u.phone === `+${normalizedPhone}`
+      );
+      if (match) return match;
+      if (users.length < 200) break;
+      page += 1;
+    }
+  } catch (err) {
+    console.error('findAuthUserByPhone (listUsers) error:', err.message);
+  }
+
+  return null;
 }
 
 async function sendOtp(phone) {
@@ -153,17 +185,16 @@ async function verifyOtp(phone, otp) {
 
   await supabaseAdmin.from('otp_requests').delete().eq('phone', phone);
 
-  const email = `poolit_${phone}@poolit.in`;
+  const email = syntheticEmail(phone);
   const isAdmin = ADMIN_PHONES.includes(phone);
 
-  let existing = await findAuthUserByPhone(phone);
-  let authUser;
+  let authUser = await findAuthUserByPhone(phone);
 
-  if (existing) {
+  if (authUser) {
     const { data: updated, error: updErr } = await supabaseAdmin.auth.admin.updateUserById(
-      existing.id,
+      authUser.id,
       {
-        email: existing.email || email,
+        email: authUser.email || email,
         phone: `+91${phone}`,
         phone_confirm: true,
         email_confirm: true,
@@ -171,7 +202,7 @@ async function verifyOtp(phone, otp) {
       }
     );
     if (updErr) throw updErr;
-    authUser = updated;
+    authUser = updated?.user || updated;
   } else {
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -181,8 +212,30 @@ async function verifyOtp(phone, otp) {
       phone_confirm: true,
       user_metadata: { name: '', phone, is_admin: isAdmin },
     });
-    if (createErr) throw createErr;
-    authUser = created;
+    if (createErr) {
+      // The user may already exist (e.g. created before profiles existed).
+      // Recover instead of failing the login.
+      if (/already|exist|registered/i.test(createErr.message || '')) {
+        const found = await findAuthUserByPhone(phone);
+        if (!found) throw createErr;
+        const { data: updated, error: updErr } = await supabaseAdmin.auth.admin.updateUserById(
+          found.id,
+          {
+            email: found.email || email,
+            phone: `+91${phone}`,
+            phone_confirm: true,
+            email_confirm: true,
+            user_metadata: { name: '', phone, is_admin: isAdmin },
+          }
+        );
+        if (updErr) throw updErr;
+        authUser = updated?.user || updated;
+      } else {
+        throw createErr;
+      }
+    } else {
+      authUser = created?.user || created;
+    }
   }
 
   const { error: profErr } = await supabaseAdmin.from('profiles').upsert(
@@ -202,14 +255,20 @@ async function verifyOtp(phone, otp) {
   });
   if (linkErr) throw linkErr;
 
-  const link = linkData?.user?.action_links?.[0] || {};
+  const props = linkData?.properties || {};
   const tokenHash =
+    props.hashed_token ||
+    linkData?.hashed_token ||
+    props.token_hash ||
     linkData?.token_hash ||
-    linkData?.properties?.token_hash ||
-    link.token_hash ||
-    extractTokenHash(linkData?.action_link) ||
-    extractTokenHash(linkData?.properties?.action_link) ||
-    extractTokenHash(link.action_link);
+    extractTokenHash(props.action_link) ||
+    extractTokenHash(linkData?.action_link);
+
+  if (!tokenHash) {
+    const err = new Error('Could not generate a login token');
+    err.status = 500;
+    throw err;
+  }
 
   return {
     token_hash: tokenHash,
