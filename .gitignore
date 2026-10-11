@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+.pub-cache/
+
+# env / secrets
+.env
+.env.local
+.env.*.local
+
+# flutter / dart
+frontend/.dart_tool/
+frontend/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+
+# vercel
+.vercel/
+backend/.vercel/
+
+# misc
+*.log
+.DS_Store
+.idea/
+*.iml
+/backend/.env.example
