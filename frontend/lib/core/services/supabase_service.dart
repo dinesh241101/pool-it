@@ -96,6 +96,7 @@ class SupabaseService {
     'emergencyContact': '',
     'isLicenseVerified': false,
     'isDriver': r['is_driver'] ?? false,
+    'isAdmin': r['is_admin'] ?? false,
     'createdAt': r['created_at'],
   };
 
