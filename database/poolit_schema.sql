@@ -3,11 +3,24 @@
 
 -- ---------------------------------------------------------------------------
 -- Cleanup: drop the legacy (Prisma-era) tables that conflict with this schema.
--- They are expected to be EMPTY. If you have real data, back it up first.
+-- Guarded by legacy-only columns so this is safe to re-run (it will NOT drop
+-- the new tables once they exist). They are expected to be EMPTY.
 -- ---------------------------------------------------------------------------
-drop table if exists public.bookings cascade;
-drop table if exists public.rides cascade;
-drop table if exists public.vehicles cascade;
+do $$ begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'bookings' and column_name = 'seats_booked') then
+    drop table public.bookings cascade;
+  end if;
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'rides' and column_name = 'total_seats') then
+    drop table public.rides cascade;
+  end if;
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'vehicles' and column_name = 'user_id') then
+    drop table public.vehicles cascade;
+  end if;
+end $$;
+-- These are not part of the new schema, so dropping them is always safe
 drop table if exists public.users cascade;
 drop table if exists public.legacy_profiles cascade;
 
@@ -179,6 +192,16 @@ $$;
 
 create or replace trigger on_auth_user_created after insert on auth.users for each row execute function handle_new_user();
 
+-- Helper used by RLS: checks admin status WITHOUT re-entering RLS on profiles
+-- (a self-referential subquery inside a profiles policy causes infinite recursion).
+create or replace function public.is_admin(uid uuid)
+returns boolean language sql stable security definer set search_path = 'public'
+as $$
+  select coalesce((select p.is_admin from public.profiles p where p.id = uid), false);
+$$;
+
+grant execute on function public.is_admin(uuid) to anon, authenticated, service_role;
+
 -- ---------------------------------------------------------------------------
 -- RPC functions
 -- ---------------------------------------------------------------------------
@@ -334,7 +357,7 @@ begin
 end $$;
 
 create policy "profiles_select" on public.profiles for select to authenticated
-  using (auth.uid() = id or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
+  using (auth.uid() = id or public.is_admin(auth.uid()));
 create policy "profiles_insert" on public.profiles for insert to authenticated
   with check (auth.uid() = id);
 create policy "profiles_update" on public.profiles for update to authenticated
