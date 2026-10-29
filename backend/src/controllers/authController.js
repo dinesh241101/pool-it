@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { supabaseAdmin } = require('../config/supabase');
 const { sendWhatsAppText } = require('../config/openwa');
+const { verifyFirebaseIdToken } = require('../config/firebase');
 
 const OTP_TTL_SECONDS = parseInt(process.env.OTP_TTL_SECONDS || '300', 10);
 const OTP_COOLDOWN_SECONDS = parseInt(process.env.OTP_COOLDOWN_SECONDS || '60', 10);
@@ -80,6 +81,59 @@ async function findAuthUserByPhone(phone) {
   }
 
   return null;
+}
+
+// Look up an existing auth user by email using the Admin API. Supabase does
+// not expose a getUserByEmail helper, so page through the user list.
+async function findAuthUserByEmail(email) {
+  const target = String(email || '').trim().toLowerCase();
+  if (!target) return null;
+
+  try {
+    let page = 1;
+    while (page <= 50) {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+      if (error) throw error;
+      const users = (data && data.users) || [];
+      const match = users.find((u) => (u.email || '').toLowerCase() === target);
+      if (match) return match;
+      if (users.length < 200) break;
+      page += 1;
+    }
+  } catch (err) {
+    console.error('findAuthUserByEmail error:', err.message);
+  }
+
+  return null;
+}
+
+function extractLoginToken(linkData) {
+  const props = linkData?.properties || {};
+  return (
+    props.hashed_token ||
+    linkData?.hashed_token ||
+    props.token_hash ||
+    linkData?.token_hash ||
+    extractTokenHash(props.action_link) ||
+    extractTokenHash(linkData?.action_link) ||
+    null
+  );
+}
+
+async function generateLoginToken(authUser, fallbackEmail) {
+  const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+    type: 'magiclink',
+    email: authUser.email || fallbackEmail,
+  });
+  if (linkErr) throw linkErr;
+
+  const tokenHash = extractLoginToken(linkData);
+  if (!tokenHash) {
+    const err = new Error('Could not generate a login token');
+    err.status = 500;
+    throw err;
+  }
+  return tokenHash;
 }
 
 async function sendOtp(phone) {
@@ -249,26 +303,7 @@ async function verifyOtp(phone, otp) {
   );
   if (profErr) throw profErr;
 
-  const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'magiclink',
-    email: authUser.email || email,
-  });
-  if (linkErr) throw linkErr;
-
-  const props = linkData?.properties || {};
-  const tokenHash =
-    props.hashed_token ||
-    linkData?.hashed_token ||
-    props.token_hash ||
-    linkData?.token_hash ||
-    extractTokenHash(props.action_link) ||
-    extractTokenHash(linkData?.action_link);
-
-  if (!tokenHash) {
-    const err = new Error('Could not generate a login token');
-    err.status = 500;
-    throw err;
-  }
+  const tokenHash = await generateLoginToken(authUser, email);
 
   return {
     token_hash: tokenHash,
@@ -280,6 +315,144 @@ async function verifyOtp(phone, otp) {
     },
   };
 }
+
+// Sign in with a Firebase ID token (Google provider), then bridge the identity
+// into a Supabase session so the existing RLS/data layer keeps working.
+async function signInWithFirebase(idToken) {
+  const decoded = await verifyFirebaseIdToken(idToken);
+  const provider = decoded.firebase?.sign_in_provider;
+  if (provider && provider !== 'google.com') {
+    const err = new Error('Only Google sign-in is supported');
+    err.status = 403;
+    throw err;
+  }
+
+  const email = (decoded.email || '').trim().toLowerCase();
+  const firebaseUid = decoded.uid;
+  const name = (decoded.name || '').trim();
+  const picture = decoded.picture || '';
+
+  if (!email) {
+    const err = new Error('This Google account does not have an email address');
+    err.status = 400;
+    throw err;
+  }
+
+  if (decoded.email_verified === false) {
+    const err = new Error('This Google account email is not verified');
+    err.status = 403;
+    throw err;
+  }
+
+  let authUser = await findAuthUserByEmail(email);
+
+  if (authUser) {
+    const metadata = {
+      ...(authUser.user_metadata || {}),
+      firebase_uid: firebaseUid,
+      auth_provider: 'google',
+    };
+    if (name) metadata.name = name;
+    if (picture) metadata.profile_pic = picture;
+
+    const { data: updated, error: updErr } = await supabaseAdmin.auth.admin.updateUserById(
+      authUser.id,
+      { email_confirm: true, user_metadata: metadata }
+    );
+    if (updErr) throw updErr;
+    authUser = updated?.user || updated || authUser;
+  } else {
+    const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: crypto.randomBytes(16).toString('hex'),
+      email_confirm: true,
+      user_metadata: {
+        name,
+        profile_pic: picture,
+        firebase_uid: firebaseUid,
+        auth_provider: 'google',
+      },
+    });
+
+    if (createErr) {
+      if (/already|exist|registered/i.test(createErr.message || '')) {
+        const found = await findAuthUserByEmail(email);
+        if (!found) throw createErr;
+        const { data: updated, error: updErr } = await supabaseAdmin.auth.admin.updateUserById(
+          found.id,
+          {
+            email_confirm: true,
+            user_metadata: {
+              ...(found.user_metadata || {}),
+              name: name || found.user_metadata?.name || '',
+              profile_pic: picture || found.user_metadata?.profile_pic || '',
+              firebase_uid: firebaseUid,
+              auth_provider: 'google',
+            },
+          }
+        );
+        if (updErr) throw updErr;
+        authUser = updated?.user || updated || found;
+      } else {
+        throw createErr;
+      }
+    } else {
+      authUser = created?.user || created;
+    }
+  }
+
+  const profileFields = { id: authUser.id };
+  if (name) profileFields.full_name = name;
+  if (picture) profileFields.avatar_url = picture;
+
+  const { error: profErr } = await supabaseAdmin
+    .from('profiles')
+    .upsert(profileFields, { onConflict: 'id' });
+  if (profErr) throw profErr;
+
+  const tokenHash = await generateLoginToken(authUser, email);
+
+  return {
+    token_hash: tokenHash,
+    user: {
+      id: authUser.id,
+      email,
+      name: name || authUser.user_metadata?.name || '',
+      profile_pic: picture || authUser.user_metadata?.profile_pic || '',
+    },
+  };
+}
+
+exports.firebaseLogin = async (req, res) => {
+  try {
+    const { id_token: idToken } = req.body || {};
+    if (!idToken || typeof idToken !== 'string') {
+      return res.status(400).json({ error: 'Firebase ID token is required' });
+    }
+
+    const result = await signInWithFirebase(idToken);
+    res.json({ message: 'Login successful', ...result });
+  } catch (error) {
+    console.error('Firebase login error:', error);
+    let status = error.status;
+    if (!status) {
+      switch (error.code) {
+        case 'auth/id-token-expired':
+        case 'auth/id-token-revoked':
+        case 'auth/invalid-id-token':
+        case 'auth/argument-error':
+          status = 401;
+          break;
+        case 'auth/user-disabled':
+          status = 403;
+          break;
+        default:
+          status = 500;
+      }
+    }
+    res.status(status).json({ error: error.message || 'Firebase login failed' });
+  }
+};
 
 exports.sendOtp = async (req, res) => {
   try {

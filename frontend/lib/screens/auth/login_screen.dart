@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/services/firebase_auth_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/validators.dart';
 import 'otp_screen.dart';
@@ -33,10 +36,12 @@ class _LoginScreenState extends State<LoginScreen> {
       final ok = await auth.dummyLogin();
       if (!mounted) return;
       if (ok) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => auth.currentUser?.name.isEmpty == true ? const ProfileSetupScreen() : const HomeScreen(),
+        unawaited(
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => auth.currentUser?.name.isEmpty == true ? const ProfileSetupScreen() : const HomeScreen(),
+            ),
           ),
         );
       } else {
@@ -49,13 +54,38 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isLoading = true);
+    try {
+      final auth = context.read<AuthProvider>();
+      final ok = await auth.signInWithGoogle();
+      if (!mounted) return;
+      if (ok) {
+        unawaited(
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => auth.currentUser?.name.isEmpty == true ? const ProfileSetupScreen() : const HomeScreen(),
+            ),
+          ),
+        );
+      } else if (auth.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(auth.error!)));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _sendOtp() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
       await context.read<AuthProvider>().sendOtp(_phoneController.text.trim());
       if (!mounted) return;
-      Navigator.push(context, MaterialPageRoute(builder: (_) => OtpScreen(phone: _phoneController.text.trim())));
+      unawaited(
+        Navigator.push(context, MaterialPageRoute(builder: (_) => OtpScreen(phone: _phoneController.text.trim()))),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send OTP: $e')));
@@ -117,10 +147,55 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Enter your phone number to continue',
+                      'Sign in with Google or continue with your phone',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppTheme.textSecondary),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton(
+                        onPressed: _isLoading ? null : _signInWithGoogle,
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          side: BorderSide(color: Colors.grey.shade300),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _GoogleGlyph(),
+                            SizedBox(width: 12),
+                            Text(
+                              'Continue with Google',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (!FirebaseAuthService.isConfigured) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Add Firebase credentials to enable Google sign-in.',
+                        style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'or continue with phone',
+                            style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
@@ -168,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
                     ],
-                    SizedBox(
+                    const SizedBox(
                       width: double.infinity,
                       child: Text(
                         'You will receive a 6-digit OTP via WhatsApp to verify your number.',
@@ -182,6 +257,24 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _GoogleGlyph extends StatelessWidget {
+  const _GoogleGlyph();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(color: Color(0xFF4285F4), shape: BoxShape.circle),
+      child: const Text(
+        'G',
+        style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
       ),
     );
   }

@@ -1,8 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart' hide User;
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
 import '../core/constants/app_constants.dart';
 import '../core/services/api_service.dart';
+import '../core/services/firebase_auth_service.dart';
 import '../core/services/supabase_service.dart';
 import '../core/services/cache_service.dart';
 
@@ -122,6 +125,61 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Google login/signup through Firebase. The backend verifies the Firebase
+  /// ID token and returns a Supabase session token so the rest of the app
+  /// (RLS, realtime, profiles) continues to work unchanged.
+  Future<bool> signInWithGoogle() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final idToken = await FirebaseAuthService.signInWithGoogle();
+      if (idToken == null || idToken.isEmpty) {
+        _error = 'Could not get a Google ID token. Please try again.';
+        return false;
+      }
+
+      final data = await ApiService.post('/auth/firebase', body: {'id_token': idToken});
+      final tokenHash = data['token_hash'] as String?;
+      if (tokenHash == null || tokenHash.isEmpty) {
+        _error = 'Login token was missing from server response';
+        return false;
+      }
+
+      final response = await Supabase.instance.client.auth.verifyOTP(tokenHash: tokenHash, type: OtpType.magiclink);
+
+      if (response.user != null) {
+        await _syncUser(response.user!, forceRefresh: true);
+        return true;
+      }
+      return false;
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        _error = null;
+      } else {
+        debugPrint('Google sign-in error: $e');
+        _error = _googleMessage(e);
+      }
+      return false;
+    } on FirebaseAuthException catch (e) {
+      if (_isWebSignInCancelled(e.code)) {
+        _error = null;
+      } else {
+        debugPrint('Firebase sign-in error: $e');
+        _error = _googleMessage(e);
+      }
+      return false;
+    } catch (e) {
+      debugPrint('signInWithGoogle error: $e');
+      _error = _googleMessage(e);
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> verifyOtp(String phone, String otp) async {
     _isLoading = true;
     _error = null;
@@ -197,12 +255,48 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    await FirebaseAuthService.signOut();
     await Supabase.instance.client.auth.signOut();
     _currentUser = null;
     _error = null;
     final cache = await CacheService.getInstance();
     await cache.clearAll();
     notifyListeners();
+  }
+
+  bool _isWebSignInCancelled(String code) {
+    return code == 'popup-closed-by-user' ||
+        code == 'cancelled-popup-request' ||
+        code == 'web-context-canceled';
+  }
+
+  String _googleMessage(Object e) {
+    if (e is ApiException) return e.message;
+    if (e is FirebaseAuthException) {
+      if (e.code == 'firebase-not-configured') return 'Google sign-in is not configured for this build.';
+      if (e.code == 'firebase-init-failed') {
+        return e.message ?? 'Google sign-in could not start. Please continue with phone OTP.';
+      }
+      if (e.code == 'google-sign-in-unsupported') return 'Google sign-in is not supported on this platform.';
+      return e.message ?? 'Google sign-in failed. Please try again.';
+    }
+    if (e is GoogleSignInException) {
+      switch (e.code) {
+        case GoogleSignInExceptionCode.canceled:
+          return 'Sign-in cancelled.';
+        case GoogleSignInExceptionCode.interrupted:
+          return 'Sign-in was interrupted. Please try again.';
+        case GoogleSignInExceptionCode.clientConfigurationError:
+          return 'Google sign-in is misconfigured. Check the OAuth client settings.';
+        default:
+          final description = e.description ?? '';
+          if (description.contains('serverClientId')) {
+            return 'Google sign-in needs the Web OAuth client ID (GOOGLE_WEB_CLIENT_ID).';
+          }
+          return description.isEmpty ? 'Google sign-in failed. Please try again.' : description;
+      }
+    }
+    return 'Something went wrong. Please try again.';
   }
 
   String _messageFrom(Object e) {

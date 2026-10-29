@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants/app_constants.dart';
+import 'core/services/firebase_auth_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/ride_provider.dart';
 import 'providers/chat_provider.dart';
@@ -15,6 +16,8 @@ void main() async {
   ChuckerFlutter.configure(showOnRelease: true, showNotification: true);
 
   await Supabase.initialize(url: AppConstants.supabaseUrl, anonKey: AppConstants.supabaseAnonKey);
+
+  await FirebaseAuthService.initialize();
 
   runApp(
     MultiProvider(

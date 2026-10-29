@@ -16,6 +16,9 @@ dependencies:
   uuid: ^4.2.1
   webview_flutter: ^4.8.0
   chucker_flutter: ^1.9.2
+  firebase_core: ^5.1.0
+  firebase_auth: ^7.0.1
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   flutter_test:

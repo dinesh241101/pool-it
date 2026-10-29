@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "483907558042",
+    "project_id": "pool-it-ee50d",
+    "storage_bucket": "pool-it-ee50d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:483907558042:android:0eb8c31e28c82a1ad05d23",
+        "android_client_info": {
+          "package_name": "com.example.ridemate.ridemate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDW4IjMcOt3i-Aoj0bM_PQ9P0DvJzjDCGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
